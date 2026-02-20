@@ -221,7 +221,12 @@ export function LaunchWindow() {
                         <SelectTrigger className="h-9 text-xs bg-slate-700/50 border-slate-600/50 text-white hover:bg-slate-700 transition-colors">
                           <SelectValue placeholder="Select device" />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectContent
+                          className="bg-slate-800 border-slate-600"
+                          position="popper"
+                          side="top"
+                          sideOffset={4}
+                        >
                           {devices.map((device) => (
                             <SelectItem
                               key={device.deviceId}
