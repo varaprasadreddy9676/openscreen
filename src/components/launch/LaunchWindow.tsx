@@ -202,48 +202,48 @@ export function LaunchWindow() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-72 bg-slate-800/95 backdrop-blur-sm border-slate-600/50 p-4 shadow-xl"
+                className="w-64 bg-slate-800/95 backdrop-blur-sm border-slate-600/50 p-3 shadow-xl max-h-[400px] overflow-y-auto"
                 side="top"
                 align="end"
-                sideOffset={8}
-                collisionPadding={12}
+                sideOffset={6}
+                avoidCollisions={false}
               >
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-200 mb-2 block uppercase tracking-wide">
-                      Microphone Device
+                    <label className="text-[10px] font-semibold text-slate-200 mb-1.5 block uppercase tracking-wide">
+                      Device
                     </label>
                     {devices.length > 0 ? (
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         {devices.map((device) => (
                           <button
                             key={device.deviceId}
                             onClick={() => setSelectedDeviceId(device.deviceId)}
-                            className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
+                            className={`w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors ${
                               selectedDeviceId === device.deviceId
                                 ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/50'
                                 : 'bg-slate-700/30 text-slate-300 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-600/50'
                             }`}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                               {selectedDeviceId === device.deviceId && (
-                                <Check size={12} className="text-emerald-400 flex-shrink-0" />
+                                <Check size={11} className="text-emerald-400 flex-shrink-0" />
                               )}
-                              <span className="truncate">{device.label}</span>
+                              <span className="truncate text-[11px]">{device.label}</span>
                             </div>
                           </button>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-xs text-slate-400 py-2">Loading devices...</div>
+                      <div className="text-xs text-slate-400 py-1">Loading...</div>
                     )}
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-semibold text-slate-200 mb-2 block uppercase tracking-wide">
-                      Input Level
+                    <label className="text-[10px] font-semibold text-slate-200 mb-1.5 block uppercase tracking-wide">
+                      Level
                     </label>
-                    <div className="bg-slate-900/50 rounded p-2 border border-slate-700/50">
+                    <div className="bg-slate-900/50 rounded p-1.5 border border-slate-700/50">
                       <AudioLevelMeter level={level} className="w-full" />
                     </div>
                   </div>
