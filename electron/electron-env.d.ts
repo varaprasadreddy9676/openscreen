@@ -40,6 +40,7 @@ interface Window {
     getCurrentVideoPath: () => Promise<{ success: boolean; path?: string }>
     clearCurrentVideoPath: () => Promise<{ success: boolean }>
     getPlatform: () => Promise<string>
+    revealInFolder: (filePath: string) => Promise<{ success: boolean; error?: string; message?: string }>,
     hudOverlayHide: () => void;
     hudOverlayClose: () => void;
   }

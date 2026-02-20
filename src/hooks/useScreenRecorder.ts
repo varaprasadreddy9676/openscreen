@@ -1,15 +1,21 @@
 import { useState, useRef, useEffect } from "react";
 import { fixWebmDuration } from "@fix-webm-duration/fix";
+import { toast } from "sonner";
 
 type UseScreenRecorderReturn = {
   recording: boolean;
   toggleRecording: () => void;
+  microphoneEnabled: boolean;
+  setMicrophoneEnabled: (enabled: boolean) => void;
 };
 
 export function useScreenRecorder(): UseScreenRecorderReturn {
   const [recording, setRecording] = useState(false);
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
+  const screenStream = useRef<MediaStream | null>(null);
+  const microphoneStream = useRef<MediaStream | null>(null);
   const chunks = useRef<Blob[]>([]);
   const startTime = useRef<number>(0);
 
@@ -45,21 +51,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
     return Math.round(18_000_000 * highFrameRateBoost);
   };
 
-  const stopRecording = useRef(() => {
-    if (mediaRecorder.current?.state === "recording") {
-      if (stream.current) {
-        stream.current.getTracks().forEach(track => track.stop());
-      }
-      mediaRecorder.current.stop();
-      setRecording(false);
-
-      window.electronAPI?.setRecordingState(false);
-    }
-  });
-
   useEffect(() => {
     let cleanup: (() => void) | undefined;
-    
+
     if (window.electronAPI?.onStopRecordingFromTray) {
       cleanup = window.electronAPI.onStopRecordingFromTray(() => {
         stopRecording.current();
@@ -68,16 +62,36 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
     return () => {
       if (cleanup) cleanup();
-      
+
       if (mediaRecorder.current?.state === "recording") {
         mediaRecorder.current.stop();
       }
-      if (stream.current) {
-        stream.current.getTracks().forEach(track => track.stop());
-        stream.current = null;
-      }
+      // Stop all streams
+      screenStream.current?.getTracks().forEach(track => track.stop());
+      microphoneStream.current?.getTracks().forEach(track => track.stop());
+      stream.current?.getTracks().forEach(track => track.stop());
+      screenStream.current = null;
+      microphoneStream.current = null;
+      stream.current = null;
     };
   }, []);
+
+  const stopRecording = useRef(() => {
+    if (mediaRecorder.current?.state === "recording") {
+      mediaRecorder.current.stop();
+      setRecording(false);
+
+      // Stop all streams to free up resources
+      screenStream.current?.getTracks().forEach(track => track.stop());
+      microphoneStream.current?.getTracks().forEach(track => track.stop());
+      stream.current?.getTracks().forEach(track => track.stop());
+      screenStream.current = null;
+      microphoneStream.current = null;
+      stream.current = null;
+
+      window.electronAPI?.setRecordingState(false);
+    }
+  });
 
   const startRecording = async () => {
     try {
@@ -87,8 +101,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
         return;
       }
 
-      const mediaStream = await (navigator.mediaDevices as any).getUserMedia({
-        audio: false,
+      // Request screen recording permissions and get screen stream
+      const screenMediaStream = await (navigator.mediaDevices as any).getUserMedia({
+        audio: false, // Screen audio will be handled separately
         video: {
           mandatory: {
             chromeMediaSource: "desktop",
@@ -100,11 +115,56 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
           },
         },
       });
-      stream.current = mediaStream;
-      if (!stream.current) {
-        throw new Error("Media stream is not available.");
+      screenStream.current = screenMediaStream;
+
+      // If microphone is enabled, request microphone permissions
+      if (microphoneEnabled) {
+        try {
+          microphoneStream.current = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+            video: false,
+          });
+        } catch (audioError) {
+          console.warn('Failed to get microphone access:', audioError);
+
+          // If user denies permission, disable microphone and continue with screen recording only
+          if ((audioError as any).name === 'NotAllowedError' || (audioError as any).name === 'PermissionDeniedError') {
+            setMicrophoneEnabled(false);
+            alert('Microphone access denied. Recording will continue without audio.');
+          }
+
+          // Continue with screen recording only
+        }
       }
-      const videoTrack = stream.current.getVideoTracks()[0];
+
+      // Combine streams into single media stream
+      stream.current = new MediaStream();
+
+      // Add video track
+      let videoTrack: MediaStreamTrack | undefined;
+      if (screenStream.current) {
+        videoTrack = screenStream.current.getVideoTracks()[0];
+        if (videoTrack) {
+          stream.current.addTrack(videoTrack);
+        } else {
+          throw new Error("Video track is not available.");
+        }
+      } else {
+        throw new Error("Screen stream is not available.");
+      }
+
+      // Add audio tracks if available
+      if (microphoneStream.current) {
+        const micAudioTrack = microphoneStream.current.getAudioTracks()[0];
+        if (micAudioTrack) {
+          stream.current.addTrack(micAudioTrack);
+        }
+      }
+
       try {
         await videoTrack.applyConstraints({
           frameRate: { ideal: TARGET_FRAME_RATE, max: TARGET_FRAME_RATE },
@@ -116,11 +176,11 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
       }
 
       let { width = 1920, height = 1080, frameRate = TARGET_FRAME_RATE } = videoTrack.getSettings();
-      
+
       // Ensure dimensions are divisible by 2 for VP9/AV1 codec compatibility
       width = Math.floor(width / 2) * 2;
       height = Math.floor(height / 2) * 2;
-      
+
       const videoBitsPerSecond = computeBitrate(width, height);
       const mimeType = selectMimeType();
 
@@ -129,18 +189,26 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
           videoBitsPerSecond / 1_000_000
         )} Mbps`
       );
-      
+
+      // Configure audio settings based on microphone availability
+      const audioBitsPerSecond = microphoneEnabled && microphoneStream.current ? 128_000 : undefined;
+
       chunks.current = [];
       const recorder = new MediaRecorder(stream.current, {
         mimeType,
         videoBitsPerSecond,
+        audioBitsPerSecond,
       });
       mediaRecorder.current = recorder;
       recorder.ondataavailable = e => {
         if (e.data && e.data.size > 0) chunks.current.push(e.data);
       };
       recorder.onstop = async () => {
+        // Clean up streams
         stream.current = null;
+        screenStream.current = null;
+        microphoneStream.current = null;
+
         if (chunks.current.length === 0) return;
         const duration = Date.now() - startTime.current;
         const recordedChunks = chunks.current;
@@ -176,9 +244,29 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
     } catch (error) {
       console.error('Failed to start recording:', error);
       setRecording(false);
+
+      // Provide user-friendly error message
+      const errorMsg = error instanceof Error ? error.message : 'Failed to start recording';
+      if (errorMsg.includes('Permission denied') || (error as any).name === 'NotAllowedError') {
+        toast.error('Recording permission denied. Please allow screen recording.');
+      } else if (errorMsg.includes('microphone') || (error as any).message?.includes('microphone')) {
+        toast.error('Microphone access failed. Please check your microphone settings.');
+      } else {
+        toast.error(errorMsg);
+      }
+
+      // Clean up any partial streams
       if (stream.current) {
         stream.current.getTracks().forEach(track => track.stop());
         stream.current = null;
+      }
+      if (screenStream.current) {
+        screenStream.current.getTracks().forEach(track => track.stop());
+        screenStream.current = null;
+      }
+      if (microphoneStream.current) {
+        microphoneStream.current.getTracks().forEach(track => track.stop());
+        microphoneStream.current = null;
       }
     }
   };
@@ -187,5 +275,5 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
     recording ? stopRecording.current() : startRecording();
   };
 
-  return { recording, toggleRecording };
+  return { recording, toggleRecording, microphoneEnabled, setMicrophoneEnabled };
 }
