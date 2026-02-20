@@ -196,29 +196,37 @@ export function LaunchWindow() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 hover:bg-white/10"
+                  className="h-6 w-6 p-0 hover:bg-white/10 transition-colors"
                 >
-                  <MdSettings size={14} className="text-white/70 hover:text-white" />
+                  <MdSettings size={15} className="text-white/80 hover:text-white transition-colors" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64 bg-slate-800 border-slate-700 p-3">
-                <div className="space-y-3">
+              <PopoverContent
+                className="w-72 bg-slate-800/95 backdrop-blur-sm border-slate-600/50 p-4 shadow-xl"
+                side="top"
+                align="end"
+                sideOffset={8}
+                collisionPadding={12}
+              >
+                <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-slate-300 mb-1.5 block">Microphone Device</label>
+                    <label className="text-[11px] font-semibold text-slate-200 mb-2 block uppercase tracking-wide">
+                      Microphone Device
+                    </label>
                     {devices.length > 0 ? (
                       <Select
                         value={selectedDeviceId}
                         onValueChange={setSelectedDeviceId}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-slate-700 border-slate-600 text-white">
+                        <SelectTrigger className="h-9 text-xs bg-slate-700/50 border-slate-600/50 text-white hover:bg-slate-700 transition-colors">
                           <SelectValue placeholder="Select device" />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-700">
+                        <SelectContent className="bg-slate-800 border-slate-600">
                           {devices.map((device) => (
                             <SelectItem
                               key={device.deviceId}
                               value={device.deviceId}
-                              className="text-white text-xs hover:bg-slate-700"
+                              className="text-white text-xs hover:bg-slate-700 focus:bg-slate-700"
                             >
                               {device.label}
                             </SelectItem>
@@ -226,13 +234,17 @@ export function LaunchWindow() {
                         </SelectContent>
                       </Select>
                     ) : (
-                      <div className="text-xs text-slate-400">Loading devices...</div>
+                      <div className="text-xs text-slate-400 py-2">Loading devices...</div>
                     )}
                   </div>
 
                   <div>
-                    <label className="text-xs text-slate-300 mb-1.5 block">Input Level</label>
-                    <AudioLevelMeter level={level} className="w-full" />
+                    <label className="text-[11px] font-semibold text-slate-200 mb-2 block uppercase tracking-wide">
+                      Input Level
+                    </label>
+                    <div className="bg-slate-900/50 rounded p-2 border border-slate-700/50">
+                      <AudioLevelMeter level={level} className="w-full" />
+                    </div>
                   </div>
                 </div>
               </PopoverContent>

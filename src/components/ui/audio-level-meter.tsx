@@ -4,26 +4,34 @@ interface AudioLevelMeterProps {
 }
 
 export function AudioLevelMeter({ level, className = "" }: AudioLevelMeterProps) {
-  // Determine color based on level
-  const getBarColor = () => {
-    if (level > 80) return 'bg-red-500';
-    if (level > 50) return 'bg-yellow-500';
-    return 'bg-green-500';
+  // Determine color based on level for each bar
+  const getBarColor = (threshold: number) => {
+    if (!level || level < threshold) return 'bg-slate-700';
+    if (threshold > 80) return 'bg-red-500';
+    if (threshold > 60) return 'bg-yellow-500';
+    if (threshold > 40) return 'bg-green-500';
+    return 'bg-emerald-500';
   };
 
+  const bars = [
+    { threshold: 10, height: '30%' },
+    { threshold: 25, height: '45%' },
+    { threshold: 45, height: '60%' },
+    { threshold: 65, height: '75%' },
+    { threshold: 85, height: '90%' },
+  ];
+
   return (
-    <div className={`flex items-center gap-1 h-4 ${className}`}>
-      {/* 5 level bars */}
-      {[20, 40, 60, 80, 100].map((threshold, index) => (
+    <div className={`flex items-end justify-between gap-1.5 h-6 ${className}`}>
+      {bars.map((bar, index) => (
         <div
-          key={threshold}
-          className={`w-1 h-full rounded-sm transition-all duration-75 ${
-            level >= threshold
-              ? getBarColor()
-              : 'bg-white/20'
+          key={index}
+          className={`flex-1 rounded-sm transition-all duration-100 ease-out ${
+            getBarColor(bar.threshold)
           }`}
           style={{
-            height: `${40 + index * 15}%`, // Bars get progressively taller
+            height: level >= bar.threshold ? bar.height : '15%',
+            opacity: level >= bar.threshold ? 1 : 0.4,
           }}
         />
       ))}
