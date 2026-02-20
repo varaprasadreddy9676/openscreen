@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { fixWebmDuration } from "@fix-webm-duration/fix";
+import { toast } from "sonner";
 
 type UseScreenRecorderReturn = {
   recording: boolean;
@@ -173,15 +174,6 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
       } catch (error) {
         console.warn("Unable to lock 4K/60fps constraints, using best available track settings.", error);
       }
-      try {
-        await videoTrack.applyConstraints({
-          frameRate: { ideal: TARGET_FRAME_RATE, max: TARGET_FRAME_RATE },
-          width: { ideal: TARGET_WIDTH, max: TARGET_WIDTH },
-          height: { ideal: TARGET_HEIGHT, max: TARGET_HEIGHT },
-        });
-      } catch (error) {
-        console.warn("Unable to lock 4K/60fps constraints, using best available track settings.", error);
-      }
 
       let { width = 1920, height = 1080, frameRate = TARGET_FRAME_RATE } = videoTrack.getSettings();
 
@@ -252,6 +244,16 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
     } catch (error) {
       console.error('Failed to start recording:', error);
       setRecording(false);
+
+      // Provide user-friendly error message
+      const errorMsg = error instanceof Error ? error.message : 'Failed to start recording';
+      if (errorMsg.includes('Permission denied') || (error as any).name === 'NotAllowedError') {
+        toast.error('Recording permission denied. Please allow screen recording.');
+      } else if (errorMsg.includes('microphone') || (error as any).message?.includes('microphone')) {
+        toast.error('Microphone access failed. Please check your microphone settings.');
+      } else {
+        toast.error(errorMsg);
+      }
 
       // Clean up any partial streams
       if (stream.current) {
