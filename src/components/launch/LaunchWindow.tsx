@@ -13,10 +13,10 @@ import { FaFolderMinus } from "react-icons/fa6";
 import { FiMinus, FiX } from "react-icons/fi";
 import { ContentClamp } from "../ui/content-clamp";
 import { Switch } from "../ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { AudioLevelMeter } from "../ui/audio-level-meter";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { MdSettings } from "react-icons/md";
+import { Check } from "lucide-react";
 
 export function LaunchWindow() {
   const {
@@ -214,30 +214,26 @@ export function LaunchWindow() {
                       Microphone Device
                     </label>
                     {devices.length > 0 ? (
-                      <Select
-                        value={selectedDeviceId}
-                        onValueChange={setSelectedDeviceId}
-                      >
-                        <SelectTrigger className="h-9 text-xs bg-slate-700/50 border-slate-600/50 text-white hover:bg-slate-700 transition-colors">
-                          <SelectValue placeholder="Select device" />
-                        </SelectTrigger>
-                        <SelectContent
-                          className="bg-slate-800 border-slate-600"
-                          position="popper"
-                          side="top"
-                          sideOffset={4}
-                        >
-                          {devices.map((device) => (
-                            <SelectItem
-                              key={device.deviceId}
-                              value={device.deviceId}
-                              className="text-white text-xs hover:bg-slate-700 focus:bg-slate-700"
-                            >
-                              {device.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-1.5">
+                        {devices.map((device) => (
+                          <button
+                            key={device.deviceId}
+                            onClick={() => setSelectedDeviceId(device.deviceId)}
+                            className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
+                              selectedDeviceId === device.deviceId
+                                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/50'
+                                : 'bg-slate-700/30 text-slate-300 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-600/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {selectedDeviceId === device.deviceId && (
+                                <Check size={12} className="text-emerald-400 flex-shrink-0" />
+                              )}
+                              <span className="truncate">{device.label}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     ) : (
                       <div className="text-xs text-slate-400 py-2">Loading devices...</div>
                     )}
