@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import styles from "./LaunchWindow.module.css";
 import { useScreenRecorder } from "../../hooks/useScreenRecorder";
+import { useMicrophoneDevices } from "../../hooks/useMicrophoneDevices";
+import { useAudioLevelMeter } from "../../hooks/useAudioLevelMeter";
 import { Button } from "../ui/button";
 import { BsRecordCircle } from "react-icons/bs";
 import { FaRegStopCircle } from "react-icons/fa";
@@ -11,11 +13,34 @@ import { FaFolderMinus } from "react-icons/fa6";
 import { FiMinus, FiX } from "react-icons/fi";
 import { ContentClamp } from "../ui/content-clamp";
 import { Switch } from "../ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { AudioLevelMeter } from "../ui/audio-level-meter";
 
 export function LaunchWindow() {
-  const { recording, toggleRecording, microphoneEnabled, setMicrophoneEnabled } = useScreenRecorder();
+  const {
+    recording,
+    toggleRecording,
+    microphoneEnabled,
+    setMicrophoneEnabled,
+    setMicrophoneDeviceId
+  } = useScreenRecorder();
+
+  const { devices, selectedDeviceId, setSelectedDeviceId } = useMicrophoneDevices();
+  const { level } = useAudioLevelMeter({
+    enabled: microphoneEnabled && !recording,
+    deviceId: selectedDeviceId,
+    smoothingFactor: 0.8,
+  });
+
   const [recordingStart, setRecordingStart] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
+
+  // Sync selected device with recorder
+  useEffect(() => {
+    if (selectedDeviceId) {
+      setMicrophoneDeviceId(selectedDeviceId);
+    }
+  }, [selectedDeviceId, setMicrophoneDeviceId]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
@@ -145,19 +170,51 @@ export function LaunchWindow() {
 
         <div className="w-px h-6 bg-white/30" />
 
-        {/* Microphone toggle */}
+        {/* Microphone controls */}
         <div className={`flex items-center gap-2 px-2 ${styles.electronNoDrag}`}>
-          {microphoneEnabled ? (
-            <MdMic size={14} className="text-white" />
-          ) : (
-            <MdMicOff size={14} className="text-white/50" />
+          {/* Mic icon and toggle */}
+          <div className="flex items-center gap-1.5">
+            {microphoneEnabled ? (
+              <MdMic size={14} className="text-white" />
+            ) : (
+              <MdMicOff size={14} className="text-white/50" />
+            )}
+            <Switch
+              checked={microphoneEnabled}
+              onCheckedChange={setMicrophoneEnabled}
+              disabled={recording}
+              className="data-[state=checked]:bg-[#34B27B]"
+            />
+          </div>
+
+          {/* Device selector - only show when mic is enabled and not recording */}
+          {microphoneEnabled && !recording && devices.length > 0 && (
+            <Select
+              value={selectedDeviceId}
+              onValueChange={setSelectedDeviceId}
+              disabled={recording}
+            >
+              <SelectTrigger className="h-6 w-[140px] text-xs bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Select device" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                {devices.map((device) => (
+                  <SelectItem
+                    key={device.deviceId}
+                    value={device.deviceId}
+                    className="text-white text-xs hover:bg-slate-700"
+                  >
+                    {device.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
-          <Switch
-            checked={microphoneEnabled}
-            onCheckedChange={setMicrophoneEnabled}
-            disabled={recording}
-            className="data-[state=checked]:bg-[#34B27B]"
-          />
+
+          {/* Audio level meter - only show when mic is enabled and not recording */}
+          {microphoneEnabled && !recording && (
+            <AudioLevelMeter level={level} className="w-10" />
+          )}
         </div>
 
         <div className="w-px h-6 bg-white/30" />

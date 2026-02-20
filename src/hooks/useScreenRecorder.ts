@@ -7,11 +7,14 @@ type UseScreenRecorderReturn = {
   toggleRecording: () => void;
   microphoneEnabled: boolean;
   setMicrophoneEnabled: (enabled: boolean) => void;
+  microphoneDeviceId: string | undefined;
+  setMicrophoneDeviceId: (deviceId: string | undefined) => void;
 };
 
 export function useScreenRecorder(): UseScreenRecorderReturn {
   const [recording, setRecording] = useState(false);
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+  const [microphoneDeviceId, setMicrophoneDeviceId] = useState<string | undefined>(undefined);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const screenStream = useRef<MediaStream | null>(null);
@@ -121,11 +124,18 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
       if (microphoneEnabled) {
         try {
           microphoneStream.current = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            },
+            audio: microphoneDeviceId
+              ? {
+                  deviceId: { exact: microphoneDeviceId },
+                  echoCancellation: true,
+                  noiseSuppression: true,
+                  autoGainControl: true,
+                }
+              : {
+                  echoCancellation: true,
+                  noiseSuppression: true,
+                  autoGainControl: true,
+                },
             video: false,
           });
         } catch (audioError) {
@@ -275,5 +285,5 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
     recording ? stopRecording.current() : startRecording();
   };
 
-  return { recording, toggleRecording, microphoneEnabled, setMicrophoneEnabled };
+  return { recording, toggleRecording, microphoneEnabled, setMicrophoneEnabled, microphoneDeviceId, setMicrophoneDeviceId };
 }
