@@ -15,6 +15,8 @@ import { ContentClamp } from "../ui/content-clamp";
 import { Switch } from "../ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { AudioLevelMeter } from "../ui/audio-level-meter";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { MdSettings } from "react-icons/md";
 
 export function LaunchWindow() {
   const {
@@ -171,7 +173,7 @@ export function LaunchWindow() {
         <div className="w-px h-6 bg-white/30" />
 
         {/* Microphone controls */}
-        <div className={`flex items-center gap-2 px-2 ${styles.electronNoDrag}`}>
+        <div className={`flex items-center gap-1.5 px-2 ${styles.electronNoDrag}`}>
           {/* Mic icon and toggle */}
           <div className="flex items-center gap-1.5">
             {microphoneEnabled ? (
@@ -187,33 +189,54 @@ export function LaunchWindow() {
             />
           </div>
 
-          {/* Device selector - only show when mic is enabled and not recording */}
-          {microphoneEnabled && !recording && devices.length > 0 && (
-            <Select
-              value={selectedDeviceId}
-              onValueChange={setSelectedDeviceId}
-              disabled={recording}
-            >
-              <SelectTrigger className="h-6 w-[140px] text-xs bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select device" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                {devices.map((device) => (
-                  <SelectItem
-                    key={device.deviceId}
-                    value={device.deviceId}
-                    className="text-white text-xs hover:bg-slate-700"
-                  >
-                    {device.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* Audio level meter - only show when mic is enabled and not recording */}
+          {/* Settings popover - only show when mic is enabled and not recording */}
           {microphoneEnabled && !recording && (
-            <AudioLevelMeter level={level} className="w-10" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-white/10"
+                >
+                  <MdSettings size={14} className="text-white/70 hover:text-white" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 bg-slate-800 border-slate-700 p-3">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-300 mb-1.5 block">Microphone Device</label>
+                    {devices.length > 0 ? (
+                      <Select
+                        value={selectedDeviceId}
+                        onValueChange={setSelectedDeviceId}
+                      >
+                        <SelectTrigger className="h-8 text-xs bg-slate-700 border-slate-600 text-white">
+                          <SelectValue placeholder="Select device" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          {devices.map((device) => (
+                            <SelectItem
+                              key={device.deviceId}
+                              value={device.deviceId}
+                              className="text-white text-xs hover:bg-slate-700"
+                            >
+                              {device.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="text-xs text-slate-400">Loading devices...</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-300 mb-1.5 block">Input Level</label>
+                    <AudioLevelMeter level={level} className="w-full" />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
 
