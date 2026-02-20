@@ -66,4 +66,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   revealInFolder: (filePath: string) => {
     return ipcRenderer.invoke('reveal-in-folder', filePath)
   },
+  setMicrophoneExpanded: (micEnabled: boolean) => {
+    return ipcRenderer.invoke('hud:setMicrophoneExpanded', micEnabled)
+  },
 })

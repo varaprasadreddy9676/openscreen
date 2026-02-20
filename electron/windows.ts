@@ -17,6 +17,10 @@ ipcMain.on('hud-overlay-hide', () => {
   }
 });
 
+export function getHudOverlayWindow(): BrowserWindow | null {
+  return hudOverlayWindow;
+}
+
 export function createHudOverlayWindow(): BrowserWindow {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { workArea } = primaryDisplay;

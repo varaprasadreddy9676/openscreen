@@ -43,6 +43,7 @@ interface Window {
     revealInFolder: (filePath: string) => Promise<{ success: boolean; error?: string; message?: string }>,
     hudOverlayHide: () => void;
     hudOverlayClose: () => void;
+    setMicrophoneExpanded: (micEnabled: boolean) => Promise<void>
   }
 }
 

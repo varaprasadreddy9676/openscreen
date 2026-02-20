@@ -14,9 +14,6 @@ import { FiMinus, FiX } from "react-icons/fi";
 import { ContentClamp } from "../ui/content-clamp";
 import { Switch } from "../ui/switch";
 import { AudioLevelMeter } from "../ui/audio-level-meter";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { MdSettings } from "react-icons/md";
-import { Check } from "lucide-react";
 
 export function LaunchWindow() {
   const {
@@ -43,6 +40,13 @@ export function LaunchWindow() {
       setMicrophoneDeviceId(selectedDeviceId);
     }
   }, [selectedDeviceId, setMicrophoneDeviceId]);
+
+  // Resize HUD window when microphone is toggled
+  useEffect(() => {
+    if (window.electronAPI?.setMicrophoneExpanded) {
+      window.electronAPI.setMicrophoneExpanded(microphoneEnabled && !recording);
+    }
+  }, [microphoneEnabled, recording]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
@@ -125,14 +129,16 @@ export function LaunchWindow() {
   return (
     <div className="w-full h-full flex items-center bg-transparent">
       <div
-        className={`w-full max-w-[500px] mx-auto flex items-center justify-between px-4 py-2 ${styles.electronDrag} ${styles.hudBar}`}
+        className={`w-full mx-auto flex items-center justify-between px-4 py-2 ${styles.electronDrag} ${styles.hudBar}`}
         style={{
+          maxWidth:'800px',
           borderRadius: 16,
           background: 'linear-gradient(135deg, rgba(28,28,36,0.97) 0%, rgba(18,18,26,0.96) 100%)',
           backdropFilter: 'blur(16px) saturate(140%)',
           WebkitBackdropFilter: 'blur(16px) saturate(140%)',
           border: '1px solid rgba(80,80,120,0.25)',
           minHeight: 44,
+          transition: 'max-width 0.2s ease',
         }}
       >
         <div className={`flex items-center gap-1 ${styles.electronDrag}`}> <RxDragHandleDots2 size={18} className="text-white/40" /> </div>
@@ -189,67 +195,28 @@ export function LaunchWindow() {
             />
           </div>
 
-          {/* Settings popover - only show when mic is enabled and not recording */}
+          {/* Inline mic settings - only show when mic is enabled and not recording */}
           {microphoneEnabled && !recording && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 hover:bg-white/10 transition-colors"
-                >
-                  <MdSettings size={15} className="text-white/80 hover:text-white transition-colors" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-64 bg-slate-800/95 backdrop-blur-sm border-slate-600/50 p-3 shadow-xl max-h-[400px] overflow-y-auto"
-                side="top"
-                align="end"
-                sideOffset={6}
-                avoidCollisions={false}
+            <div className="flex items-center gap-1.5">
+              {/* Device selector */}
+              <select
+                value={selectedDeviceId}
+                onChange={(e) => setSelectedDeviceId(e.target.value)}
+                className="bg-white/10 text-white text-[10px] px-1.5 py-0.5 rounded border border-white/20 focus:border-white/40 focus:outline-none w-[80px] truncate"
+                title={devices.find(d => d.deviceId === selectedDeviceId)?.label || 'Select microphone'}
               >
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[10px] font-semibold text-slate-200 mb-1.5 block uppercase tracking-wide">
-                      Device
-                    </label>
-                    {devices.length > 0 ? (
-                      <div className="space-y-1">
-                        {devices.map((device) => (
-                          <button
-                            key={device.deviceId}
-                            onClick={() => setSelectedDeviceId(device.deviceId)}
-                            className={`w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors ${
-                              selectedDeviceId === device.deviceId
-                                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/50'
-                                : 'bg-slate-700/30 text-slate-300 border border-slate-600/30 hover:bg-slate-700/50 hover:border-slate-600/50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-1.5">
-                              {selectedDeviceId === device.deviceId && (
-                                <Check size={11} className="text-emerald-400 flex-shrink-0" />
-                              )}
-                              <span className="truncate text-[11px]">{device.label}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-slate-400 py-1">Loading...</div>
-                    )}
-                  </div>
+                {devices.map((device) => (
+                  <option key={device.deviceId} value={device.deviceId} className="bg-slate-800 text-white">
+                    {device.label || 'Unknown device'}
+                  </option>
+                ))}
+              </select>
 
-                  <div>
-                    <label className="text-[10px] font-semibold text-slate-200 mb-1.5 block uppercase tracking-wide">
-                      Level
-                    </label>
-                    <div className="bg-slate-900/50 rounded p-1.5 border border-slate-700/50">
-                      <AudioLevelMeter level={level} className="w-full" />
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+              {/* Audio level meter */}
+              <div className="w-14">
+                <AudioLevelMeter level={level} className="w-full" />
+              </div>
+            </div>
           )}
         </div>
 

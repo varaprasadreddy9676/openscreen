@@ -241,4 +241,26 @@ export function registerIpcHandlers(
   ipcMain.handle('get-platform', () => {
     return process.platform;
   });
+
+  // Handle HUD window resize when microphone is toggled
+  ipcMain.handle('hud:setMicrophoneExpanded', (_, micEnabled: boolean) => {
+    const win = getMainWindow();
+    if (!win || win.isDestroyed()) return;
+
+    const bounds = win.getBounds();
+    const compactWidth = 500;
+    const expandedWidth = 800;
+
+    const newWidth = micEnabled ? expandedWidth : compactWidth;
+
+    win.setBounds({
+      x: bounds.x,
+      y: bounds.y,
+      width: newWidth,
+      height: bounds.height,
+    });
+
+    win.setMinimumSize(newWidth, 100);
+    win.setMaximumSize(newWidth, 100);
+  });
 }
