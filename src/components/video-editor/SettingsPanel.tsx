@@ -1,11 +1,10 @@
 import { cn } from "@/lib/utils";
-import { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getAssetPath } from "@/lib/assetPath";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import Block from '@uiw/react-color-block';
 import { Trash2, Download, Crop, X, Bug, Upload, Star, Film, Image, Sparkles, Palette, Save, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
@@ -97,6 +96,7 @@ interface SettingsPanelProps {
   selectedSpeedValue?: PlaybackSpeed | null;
   onSpeedChange?: (speed: PlaybackSpeed) => void;
   onSpeedDelete?: (id: string) => void;
+  smartDemoSlot?: React.ReactNode;
 }
 
 export default SettingsPanel;
@@ -158,6 +158,7 @@ export function SettingsPanel({
   selectedSpeedValue,
   onSpeedChange,
   onSpeedDelete,
+  smartDemoSlot,
 }: SettingsPanelProps) {
   const [wallpaperPaths, setWallpaperPaths] = useState<string[]>([]);
   const [customImages, setCustomImages] = useState<string[]>([]);
@@ -594,6 +595,20 @@ export function SettingsPanel({
               </Tabs>
             </AccordionContent>
           </AccordionItem>
+
+          {smartDemoSlot && (
+            <AccordionItem value="smart-demo" className="border-purple-800/30 rounded-xl bg-purple-950/10 px-3">
+              <AccordionTrigger className="py-2.5 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="text-purple-400"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                  <span className="text-xs font-medium text-purple-300">Smart Demo</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-3 pt-1 px-0">
+                {smartDemoSlot}
+              </AccordionContent>
+            </AccordionItem>
+          )}
         </Accordion>
       </div>
 

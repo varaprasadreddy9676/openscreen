@@ -9,6 +9,7 @@ import VideoPlayback, { VideoPlaybackRef } from "./VideoPlayback";
 import PlaybackControls from "./PlaybackControls";
 import TimelineEditor from "./timeline/TimelineEditor";
 import { SettingsPanel } from "./SettingsPanel";
+import { SmartDemoPanel } from "@/ui/SmartDemoPanel";
 import { ExportDialog } from "./ExportDialog";
 import {
   WALLPAPER_PATHS,
@@ -65,6 +66,7 @@ export default function VideoEditor() {
   const [cropRegion, setCropRegion] = useState<CropRegion>(DEFAULT_CROP_REGION);
   const [zoomRegions, setZoomRegions] = useState<ZoomRegion[]>([]);
   const [cursorTelemetry, setCursorTelemetry] = useState<CursorTelemetryPoint[]>([]);
+  const [smartDemoAutoMode, setSmartDemoAutoMode] = useState(false);
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null);
   const [trimRegions, setTrimRegions] = useState<TrimRegion[]>([]);
   const [selectedTrimId, setSelectedTrimId] = useState<string | null>(null);
@@ -241,6 +243,15 @@ export default function VideoEditor() {
     }
 
     loadInitialData();
+
+    // Check if we came from a Smart Demo recording
+    if (window.electronAPI?.getSmartDemoMode) {
+      window.electronAPI.getSmartDemoMode().then((result: { value: boolean }) => {
+        if (result?.value) {
+          setSmartDemoAutoMode(true);
+        }
+      }).catch(() => {});
+    }
   }, [applyLoadedProject]);
 
   const saveProject = useCallback(async (forceSaveAs: boolean) => {
@@ -753,6 +764,30 @@ export default function VideoEditor() {
           : region,
       ),
     );
+  }, []);
+
+  const handleSmartDemoApplyZoom = useCallback((regions: ZoomRegion[]) => {
+    // Clear existing smart zoom regions and add new ones
+    setZoomRegions((prev) => [
+      ...prev.filter((r) => !r.id.startsWith("smart-zoom-")),
+      ...regions,
+    ]);
+    toast.success(`Applied ${regions.length} smart zoom region${regions.length !== 1 ? "s" : ""}`);
+  }, []);
+
+  const handleSmartDemoApplyAnnotations = useCallback((regions: AnnotationRegion[]) => {
+    setAnnotationRegions((prev) => [
+      ...prev.filter((r) => !r.id.startsWith("smart-click-")),
+      ...regions,
+    ]);
+  }, []);
+
+  const handleSmartDemoApplyTrim = useCallback((regions: TrimRegion[]) => {
+    setTrimRegions((prev) => [
+      ...prev.filter((r) => !r.id.startsWith("smart-trim-")),
+      ...regions,
+    ]);
+    toast.success(`Added ${regions.length} trim region${regions.length !== 1 ? "s" : ""} for silence removal`);
   }, []);
   
   // Global Tab prevention
@@ -1314,6 +1349,16 @@ export default function VideoEditor() {
           selectedSpeedValue={selectedSpeedId ? speedRegions.find(r => r.id === selectedSpeedId)?.speed ?? null : null}
           onSpeedChange={handleSpeedChange}
           onSpeedDelete={handleSpeedDelete}
+          smartDemoSlot={
+            <SmartDemoPanel
+              cursorTelemetry={cursorTelemetry}
+              duration={duration}
+              isAutoMode={smartDemoAutoMode}
+              onApplyZoomRegions={handleSmartDemoApplyZoom}
+              onApplyAnnotations={handleSmartDemoApplyAnnotations}
+              onApplyTrimRegions={handleSmartDemoApplyTrim}
+            />
+          }
         />
       </div>
 

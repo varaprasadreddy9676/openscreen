@@ -41,6 +41,7 @@ let cursorCaptureInterval: NodeJS.Timeout | null = null
 let cursorCaptureStartTimeMs = 0
 let activeCursorSamples: CursorTelemetryPoint[] = []
 let pendingCursorSamples: CursorTelemetryPoint[] = []
+let smartDemoMode = false
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
@@ -238,6 +239,17 @@ export function registerIpcHandlers(
     }
   })
 
+
+  ipcMain.handle('set-smart-demo-mode', (_, value: boolean) => {
+    smartDemoMode = value
+    return { success: true }
+  })
+
+  ipcMain.handle('get-smart-demo-mode', () => {
+    const value = smartDemoMode
+    smartDemoMode = false // consume the flag
+    return { value }
+  })
 
   ipcMain.handle('open-external-url', async (_, url: string) => {
     try {

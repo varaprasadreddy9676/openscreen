@@ -40,6 +40,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCursorTelemetry: (videoPath?: string) => {
     return ipcRenderer.invoke('get-cursor-telemetry', videoPath)
   },
+  setSmartDemoMode: (value: boolean) => {
+    return ipcRenderer.invoke('set-smart-demo-mode', value)
+  },
+  getSmartDemoMode: () => {
+    return ipcRenderer.invoke('get-smart-demo-mode')
+  },
   onStopRecordingFromTray: (callback: () => void) => {
     const listener = () => callback()
     ipcRenderer.on('stop-recording-from-tray', listener)

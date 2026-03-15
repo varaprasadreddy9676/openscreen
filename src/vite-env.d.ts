@@ -80,5 +80,13 @@ interface Window {
     onMenuLoadProject: (callback: () => void) => () => void
     onMenuSaveProject: (callback: () => void) => () => void
     onMenuSaveProjectAs: (callback: () => void) => () => void
+    getPlatform: () => Promise<string>
+    revealInFolder: (filePath: string) => Promise<{ success: boolean; error?: string; message?: string }>
+    getShortcuts: () => Promise<unknown>
+    saveShortcuts: (shortcuts: unknown) => Promise<unknown>
+    hudOverlayHide?: () => void
+    hudOverlayClose?: () => void
+    setSmartDemoMode?: (value: boolean) => Promise<{ success: boolean }>
+    getSmartDemoMode?: () => Promise<{ value: boolean }>
   }
 }
